@@ -6,6 +6,8 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
+app.use(express.json());
+
 supabase.auth.getSession()
     .then(({ data, error }) => {
         if (error) {
@@ -14,6 +16,52 @@ supabase.auth.getSession()
             console.log('Supabase Auth client responded successfully');
         }
     });
+
+
+app.post('/auth/signup' , (req, res)=>{
+     const {email, password} = req.body;
+ if(!email || !password){
+    res.status(400).json({
+        message: "Please provide credentials"
+    })
+}
+ supabase.auth.signUp( {email, password})
+ .then(({ data, error }) => {
+        if (error) {
+           res.status(400).json({
+            error
+           })
+        } else{
+            res.status(201).json({
+               user: data.user,
+            })
+        }
+    });
+})
+
+app.post('/auth/login', (req,res)=>{
+    const {email, password} = req.body;
+    if(!email || !password){
+    res.status(400).json({
+        message: "Please provide credentials"
+    })
+    return;
+}
+supabase.auth.signInWithPassword({email, password})
+.then(({data, error})=>{
+   if (error) {
+           res.status(401).json({
+            error: "Invalid login credentials" ,
+           })
+        } else{
+            res.status(200).json({
+               token: data.session?.access_token,
+            })
+        }
+})
+})
+
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT} and connected to supabase`);
