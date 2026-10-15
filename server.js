@@ -61,7 +61,25 @@ supabase.auth.signInWithPassword({email, password})
 })
 })
 
+app.get('/public/info', (req, res)=>{
+    res.status(200).json({
+        message: "Welcome stranger! This info is public."
+    })
+})
 
+app.get('/protected/profile', (req, res)=>{
+    const token = req.header('Authorization');
+    
+ if(!token){
+    res.status(401).json({
+        "error" : "Access token required",
+    })
+ }
+ res.status(200).json({
+    message: "Access token received successfully",
+    token: token,
+ })
+})
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT} and connected to supabase`);
