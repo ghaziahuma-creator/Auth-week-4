@@ -1,0 +1,197 @@
+
+openapi: 3.0.3
+
+info:
+  title: Authentication API
+  description: API documentation for the Supabase authentication backend.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Signup, login, and logout operations
+  - name: Public
+    description: Publicly accessible endpoints
+  - name: Protected
+    description: Endpoints requiring a valid access token
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your Supabase access token.
+
+  schemas:
+    Credentials:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid or expired token
+        message:
+          type: string
+          example: Please provide credentials
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account using Supabase Auth.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    description: Supabase user object
+        '400':
+          description: Missing credentials or signup error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticates a user and returns an access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Supabase access token
+        '400':
+          description: Missing credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid login credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Logs out the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful
+        '400':
+          description: Token required
+        '401':
+          description: Missing, invalid, or expired access token
+        '500':
+          description: Logout failed
+
+  /public/info:
+    get:
+      tags:
+        - Public
+      summary: Get public information
+      description: This endpoint does not require authentication.
+      responses:
+        '200':
+          description: Public information returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Welcome stranger! This info is public.
+
+  /protected/profile:
+    get:
+      tags:
+        - Protected
+      summary: Get authenticated user's profile
+      description: Returns the profile of the authenticated Supabase user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                        format: email
+                      created_at:
+                        type: string
+                        format: date-time
+        '401':
+          description: Missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Authentication check failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
